@@ -4,7 +4,7 @@ from datetime import datetime
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import ElementClickInterceptedException
 from selenium.webdriver.support import expected_conditions as EC
@@ -22,12 +22,21 @@ class WebScrapper:
     "guests": "/html/body/div[7]/div[1]/div/div/div/div/div/div/div[3]/div[1]/div[1]/div[4]/div/div/div/div/input",
     "guests_adults_increase_button": "/html/body/div[9]/div[3]/div/div/div[1]/div[1]/div[2]/div/button[2]",
     "guests_minors_increase_button": "/html/body/div[9]/div[3]/div/div/div[1]/div[2]/div[2]/div/button[2]",
+    "guests_minors_age_selector": "/html/body/div[9]/div[3]/div/div/div[1]/div[{}]/div[2]/div/div/select",
     "guests_class_selector": "/html/body/div[9]/div[3]/div/div/div[2]/div[2]/div/div/div/select",
+    "guests_apply": "/html/body/div[9]/div[3]/div/div/div[3]/a",
     "current_month": "/html/body/div[9]/div[1]/div[1]/div[2]/div[1]",
     "box_date_day": "/html/body/div[9]/div[1]/div[1]/div[2]/div[1]/div[3]/div[{}]/div",
     "box_date_right_arrow": "/html/body/div[9]/div[1]/div[1]/div[2]/a[2]",
     "box_date_apply": "/html/body/div[9]/div[1]/div[2]/div/button",
     "search": "/html/body/div[7]/div[1]/div/div/div/div/div/div/div[3]/div[3]/button"
+  }
+
+  guest_classes_to_value = {
+    "economy": "YC",
+    "premium_economy": "PE",
+    "business": "C",
+    "first_class": "F",
   }
 
   delay = 20
@@ -98,11 +107,32 @@ class WebScrapper:
 
     box_date_apply_elem = self.find_element('box_date_apply')
     self.click_on_element(box_date_apply_elem)
+
+  def select_guests(self):
+    guests_elem = self.find_element('guests')
+    self.click_on_element(guests_elem)
+    if self.guests['adults'] > 1:
+      guests_adults_increase_button_elem = self.find_element('guests_adults_increase_button')
+      for _ in range(self.guests['adults'] - 1):
+        self.click_on_element(guests_adults_increase_button_elem)
+    if self.guests['minors']['amount'] > 0:
+      guests_minors_increase_button_elem = self.find_element('guests_minors_increase_button')
+      for i in range(self.guests['minors']['amount']):
+        self.click_on_element(guests_minors_increase_button_elem)
+        guests_minors_age_selector_elem = self.find_element('guests_minors_age_selector', replace_str_new=3+i)
+        selector = Select(guests_minors_age_selector_elem)
+        selector.select_by_value(str(self.guests['minors']['ages'][0]))
+    guests_class_selector_elem = self.find_element('guests_class_selector')
+    selector = Select(guests_class_selector_elem)
+    selector.select_by_value(self.guest_classes_to_value[self.guests['class']])
+
+    self.click_on_element(self.find_element('guests_apply'))
     
   def scrap_website(self, url):
     self.driver.get(url)
     self.insert_cities()
     self.insert_dates()
+    self.select_guests()
     search_elem = self.find_element('search')
     self.click_on_element(search_elem)
 
@@ -125,8 +155,11 @@ args = {
   "destiny_city": "Orlando",
   "guests": {
     "adults": 2,
-    "childs": 1,
-    "class": "Executiva"
+    "minors": {
+      "amount": 1,
+      "ages": [15]
+    },
+    "class": "business"
   }
 }
 
