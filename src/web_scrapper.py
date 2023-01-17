@@ -152,7 +152,7 @@ class WebScrapper:
     self.click_on_element(filter_check_in_luggage_elem)
     time.sleep(2)
 
-  def get_results(self) -> dict:
+  def get_results(self, site_name) -> dict:
 
     return {
       "price_by_adult": self.find_element('results_price_by_adult').text,
@@ -169,11 +169,12 @@ class WebScrapper:
       "return_arrival_hour": self.find_element('results_return_arrival_hour').text,
       "return_stops": self.find_element('results_return_stops').text,
       "return_flight_duration": self.find_element('results_return_flight_duration').text,
+      "site_name": site_name,
       "page_url": self.driver.current_url,
     }
 
     
-  def scrap_website(self, url):
+  def scrap_website(self, url, site_name):
     self.driver.get(url)
     self.insert_cities()
     self.insert_dates()
@@ -187,12 +188,12 @@ class WebScrapper:
       print("Login popup did not show.")
     self.apply_filters()
 
-    return self.get_results()
+    return self.get_results(site_name)
 
   def scrap_urls(self):
-    results = {}
+    results = []
     for site_name, url in self.urls.items():
-      results[site_name] = self.scrap_website(url)
+      results.append(self.scrap_website(url, site_name))
     return results
 # %%
 args = {
