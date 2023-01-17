@@ -9,8 +9,8 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import ElementClickInterceptedException, TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 
-# from src import DRIVER_PATH
-DRIVER_PATH = '../drivers/geckodriver'
+from src import DRIVER_PATH
+# DRIVER_PATH = '../drivers/geckodriver'
 #%%
 class WebScrapper:
 
@@ -195,30 +195,3 @@ class WebScrapper:
     for site_name, url in self.urls.items():
       results.append(self.scrap_website(url, site_name))
     return results
-# %%
-args = {
-  "urls": {
-    "decolar": "https://decolar.com"
-  },
-  
-  "arrival_date": "2023-03-20",
-  "departure_date": "2023-03-30",
-  "origin_city": "Rio de Janeiro",
-  "destiny_city": "Orlando",
-  "guests": {
-    "adults": 2,
-    "minors": {
-      "amount": 1,
-      "ages": [15]
-    },
-    "class": "business"
-  },
-  "check_in_luggage": True,
-  "one_stop": True
-}
-
-# %%
-ws = WebScrapper(**args)
-ws.scrap_urls()
-# %%
-del ws
