@@ -1,6 +1,7 @@
 #%%
 import time
 from datetime import datetime
+from dataclasses import dataclass
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -12,8 +13,52 @@ from selenium.webdriver.support import expected_conditions as EC
 from src import DRIVER_PATH
 # DRIVER_PATH = '../drivers/geckodriver'
 #%%
-class WebScrapper:
+@dataclass
+class BaseWebScrapper:
+  urls: dict
+  arrival_date: str
+  departure_date: str
+  origin_city: str
+  destiny_city: str
+  guests: dict
+  check_in_luggage: bool
+  one_stop: bool
+  delay: int = 20
+  xpaths: dict = None
+  guest_classes_to_value: dict = None
+  driver = webdriver.Firefox(executable_path=DRIVER_PATH)
 
+  def __del__(self):
+    self.driver.quit()
+
+  def click_on_element(self, element):
+    try:
+      WebDriverWait(self.driver, self.delay).until(EC.element_to_be_clickable(element)).click()
+    except ElementClickInterceptedException:
+      self.driver.execute_script("arguments[0].click();", element)
+
+  def find_element(self, element_name, replace_str_new="", replace_str_old="{}"):
+    return WebDriverWait(self.driver, self.delay).until(EC.presence_of_element_located((By.XPATH, self.xpaths[element_name].replace(replace_str_old, str(replace_str_new)))))
+
+  def insert_cities(self):
+    pass
+
+  def insert_dates(self):
+    pass
+
+  def select_guests(self):
+    pass
+
+  def apply_filters(self):
+    pass
+
+  def get_results(self):
+    pass
+
+  def scrap_website(self, url, site_name):
+    pass
+
+class DecolarWebScrapper(BaseWebScrapper):
   xpaths = {
     "origin_city": "/html/body/div[7]/div[1]/div/div/div/div/div/div/div[3]/div[1]/div[1]/div[1]/div/div[1]/div[1]/div/input",
     "destiny_city": "/html/body/div[7]/div[1]/div/div/div/div/div/div/div[3]/div[1]/div[1]/div[1]/div/div[2]/div/div/input",
@@ -48,39 +93,17 @@ class WebScrapper:
     "results_return_stops": "/html/body/div[13]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[1]/div/span/div/div/span[2]/route-choice/ul/li{}/route/itinerary/div/div/div[2]/itinerary-element[2]/span/stops-count-item/span/span/span[1]",
     "results_return_flight_duration": "/html/body/div[13]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[1]/div/span/div/div/span[2]/route-choice/ul/li{}/route/itinerary/div/div/div[3]/itinerary-element[2]/span/duration-item/span/span",
   }
-
   guest_classes_to_value = {
     "economy": "YC",
     "premium_economy": "PE",
     "business": "C",
     "first_class": "F",
   }
-
   delay = 20
+
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs, delay=self.delay, guest_classes_to_value=self.guest_classes_to_value, xpaths=self.xpaths)
   
-  def __init__(self, urls: dict, arrival_date: str, departure_date: str, origin_city: str, destiny_city: str, guests: int, check_in_luggage: bool, one_stop: bool):
-    self.driver = webdriver.Firefox(executable_path=DRIVER_PATH)
-    self.urls = urls
-    self.arrival_date = arrival_date
-    self.departure_date = departure_date
-    self.origin_city = origin_city
-    self.destiny_city = destiny_city
-    self.guests = guests
-    self.check_in_luggage = check_in_luggage
-    self.one_stop = one_stop
-    
-  def __del__(self):
-    self.driver.quit()
-
-  def click_on_element(self, element):
-    try:
-      WebDriverWait(self.driver, self.delay).until(EC.element_to_be_clickable(element)).click()
-    except ElementClickInterceptedException:
-      self.driver.execute_script("arguments[0].click();", element)
-
-  def find_element(self, element_name, replace_str_new="", replace_str_old="{}"):
-    return WebDriverWait(self.driver, self.delay).until(EC.presence_of_element_located((By.XPATH, self.xpaths[element_name].replace(replace_str_old, str(replace_str_new)))))
-
   def insert_cities(self):
     origin_city_elem = self.find_element('origin_city')
     self.click_on_element(origin_city_elem)
@@ -153,7 +176,6 @@ class WebScrapper:
     time.sleep(2)
 
   def get_results(self, site_name) -> dict:
-
     return {
       "price_by_adult": self.find_element('results_price_by_adult').text,
       "price_without_taxes": self.find_element('results_price_without_taxes').text,
@@ -173,7 +195,6 @@ class WebScrapper:
       "page_url": self.driver.current_url,
     }
 
-    
   def scrap_website(self, url, site_name):
     self.driver.get(url)
     self.insert_cities()
@@ -190,8 +211,13 @@ class WebScrapper:
 
     return self.get_results(site_name)
 
-  def scrap_urls(self):
-    results = []
-    for site_name, url in self.urls.items():
-      results.append(self.scrap_website(url, site_name))
-    return results
+site_to_ws_class = {
+  "decolar": DecolarWebScrapper
+}
+
+def scrapping_entrypoint(**kwargs):
+  results = []
+  for site_name, url in kwargs["urls"].items():
+    ws = site_to_ws_class[site_name](**kwargs)
+    results.append(ws.scrap_website(url, site_name))
+  return results

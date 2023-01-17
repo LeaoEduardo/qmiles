@@ -1,10 +1,10 @@
 import os
 import sys
 sys.path.append(os.getcwd())
-from src.web_scrapper import WebScrapper
+from src.web_scrapper import scrapping_entrypoint
 
 def test_scrap_single_url():
-  args = {
+  kwargs = {
     "urls": {
       "decolar": "https://decolar.com"
     },
@@ -25,9 +25,7 @@ def test_scrap_single_url():
     "one_stop": True
   }
 
-  ws = WebScrapper(**args)
-
-  response = ws.scrap_urls()
+  response = scrapping_entrypoint(**kwargs)
 
   assert isinstance(response, list)
   assert isinstance(response[0], dict)
