@@ -18,7 +18,7 @@ import pandas as pd
 DRIVER_PATH = '../drivers/geckodriver'
 #%%
 @dataclass
-class BaseWebScrapper:
+class BaseWebScraper:
   urls: dict
   arrival_date: str
   departure_date: str
@@ -65,7 +65,7 @@ class BaseWebScrapper:
   def scrap_website(self, url, site_name):
     pass
 #%%
-class DecolarWebScrapper(BaseWebScrapper):
+class DecolarWebScraper(BaseWebScraper):
   xpaths = {
     "close_login_popup": "/html/body/div[8]/div/nav/div[6]/div[1]/i",
     "filter_max_stops": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[1]/div[1]/span/filters/div/div/ul/filter-group[1]/li/ul/div/checkbox-filter/checkbox-filter-item[{}]/li/span/span[1]/span/label/i",
@@ -188,7 +188,7 @@ class GoogleNotCurrentYearException(Exception):
 class GoogleMaxStopsFilterException(Exception):
   pass
 
-class GoogleFlightsWebScrapper(BaseWebScrapper):
+class GoogleFlightsWebScraper(BaseWebScraper):
   xpaths = {
     "origin_city_click": "/html/body/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[1]/div/div[2]/div[1]/div[1]/div/div/div[1]/div/div/input",
     "destiny_city_click": "/html/body/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[1]/div/div[2]/div[1]/div[4]/div/div/div[1]/div/div/input",
@@ -358,11 +358,11 @@ class GoogleFlightsWebScrapper(BaseWebScrapper):
     return self.get_results(site_name)
 
 site_to_ws_class = {
-  "decolar": DecolarWebScrapper,
-  "google_flights": GoogleFlightsWebScrapper
+  "decolar": DecolarWebScraper,
+  "google_flights": GoogleFlightsWebScraper
 }
 
-def scrapping_entrypoint(**kwargs):
+def scraping_entrypoint(**kwargs):
   results = []
   for site_name, url in kwargs["urls"].items():
     ws = site_to_ws_class[site_name](**kwargs)
@@ -392,12 +392,12 @@ kwargs = {
   "max_stops": 0
 }
 #%%
-ws = DecolarWebScrapper(**kwargs)
+ws = DecolarWebScraper(**kwargs)
 print(ws.scrap_website("https://decolar.com/passagens-aereas", "decolar"))
 ws.driver.quit()
 
-# ws = GoogleFlightsWebScrapper(**kwargs)
+# ws = GoogleFlightsWebScraper(**kwargs)
 # ws.scrap_website("https://www.google.com/flights?hl=pt-BR", "google_flights")
 #%%
-response = scrapping_entrypoint(**kwargs)
+response = scraping_entrypoint(**kwargs)
 # %%

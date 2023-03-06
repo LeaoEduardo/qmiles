@@ -1,4 +1,4 @@
 Qmiles
 ===
 
-Qmiles takes care of web scrapping and automatically producing reports useful for travelling quotations.
+Qmiles takes care of web scraping and automatically producing reports useful for travelling quotations.
