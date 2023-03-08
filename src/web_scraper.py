@@ -5,6 +5,7 @@ from unidecode import unidecode
 from datetime import datetime
 from dataclasses import dataclass, field
 import requests
+from requests_html import HTMLSession, AsyncHTMLSession
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -14,8 +15,8 @@ from selenium.common.exceptions import ElementClickInterceptedException, Timeout
 from selenium.webdriver.support import expected_conditions as EC
 import pandas as pd
 
-# from src import DRIVER_PATH
-DRIVER_PATH = '../drivers/geckodriver'
+from src import DRIVER_PATH
+# DRIVER_PATH = '../drivers/geckodriver'
 #%%
 @dataclass
 class BaseWebScraper:
@@ -30,7 +31,7 @@ class BaseWebScraper:
   delay: int = 20
   xpaths: dict = None
   guest_classes_to_value: dict = None
-  drive: webdriver.Firefox = field(init=False)
+  driver: webdriver.Firefox = field(init=False)
   
   def __post_init__(self):
     self.driver = webdriver.Firefox(executable_path=DRIVER_PATH)
@@ -38,13 +39,13 @@ class BaseWebScraper:
   def __del__(self):
     self.driver.quit()
 
-  def click_on_element(self, element):
+  def click_on_element_by_xpath(self, element):
     try:
       WebDriverWait(self.driver, self.delay).until(EC.element_to_be_clickable(element)).click()
     except ElementClickInterceptedException:
       self.driver.execute_script("arguments[0].click();", element)
 
-  def find_element(self, element_name, replace_str_new="", replace_str_old="{}"):
+  def find_element_by_xpath(self, element_name, replace_str_new="", replace_str_old="{}"):
     return WebDriverWait(self.driver, self.delay).until(EC.presence_of_element_located((By.XPATH, self.xpaths[element_name].replace(replace_str_old, str(replace_str_new)))))
 
   def insert_cities(self):
@@ -68,23 +69,8 @@ class BaseWebScraper:
 class DecolarWebScraper(BaseWebScraper):
   xpaths = {
     "close_login_popup": "/html/body/div[8]/div/nav/div[6]/div[1]/i",
-    "filter_max_stops": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[1]/div[1]/span/filters/div/div/ul/filter-group[1]/li/ul/div/checkbox-filter/checkbox-filter-item[{}]/li/span/span[1]/span/label/i",
-    "filter_check_in_luggage": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[1]/div[1]/span/filters/div/div/ul/filter-group[2]/li/ul/div/checkbox-filter/checkbox-filter-item[3]/li/span/span[1]/span/label/i",
-    "results_price_by_adult": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[2]/fare/span/span/main-fare/span/span[2]/span/flights-price/span/flights-price-element/span/span/em/span[2]",
-    "results_price_without_taxes": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[2]/fare/span/span/fare-details-items/div/span/item-fare[1]/p/span/flights-price/span/flights-price-element/span/span/em/span[2]",
-    "results_price_taxes": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[2]/fare/span/span/fare-details-items/div/span/item-fare[2]/p/span/flights-price/span/flights-price-element/span/span/em/span[2]",
-    "results_price_total": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[2]/fare/span/span/fare-details-items/div/item-fare/p/span/flights-price/span/flights-price-element/span/span/em/span[2]",
-    "results_outbound_company": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[1]/div/span/div/div/span[1]/route-choice/ul/li{}/route/itinerary/div/div/div[1]/itinerary-element[2]/span/itinerary-element-airline/span/span/span/span/span[2]/span",
-    "results_outbound_departure_hour": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[1]/div/span/div/div/span[1]/route-choice/ul/li{}/route/itinerary/div/div/div[2]/itinerary-element[1]/span/span/span",
-    "results_outbound_arrival_hour": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[1]/div/span/div/div/span[1]/route-choice/ul/li{}/route/itinerary/div/div/div[3]/itinerary-element[1]/span/span/span/span",
-    "results_outbound_stops": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[1]/div/span/div/div/span[1]/route-choice/ul/li{}/route/itinerary/div/div/div[2]/itinerary-element[2]/span/stops-count-item/span/span/span[1]",
-    "results_outbound_flight_duration": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[1]/div/span/div/div/span[1]/route-choice/ul/li{}/route/itinerary/div/div/div[3]/itinerary-element[2]/span/duration-item/span/span",
-    "results_return_company": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[1]/div/span/div/div/span[2]/route-choice/ul/li{}/route/itinerary/div/div/div[1]/itinerary-element[2]/span/itinerary-element-airline/span/span/span/span/span[2]/span",
-    "results_return_departure_hour": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[1]/div/span/div/div/span[2]/route-choice/ul/li{}/route/itinerary/div/div/div[2]/itinerary-element[1]/span/span/span",
-    "results_return_arrival_hour": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[1]/div/span/div/div/span[2]/route-choice/ul/li{}/route/itinerary/div/div/div[3]/itinerary-element[1]/span/span/span/span",
-    "results_return_stops": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[1]/div/span/div/div/span[2]/route-choice/ul/li{}/route/itinerary/div/div/div[2]/itinerary-element[2]/span/stops-count-item/span/span/span[1]",
-    "results_return_flight_duration": "/html/body/div[10]/div[4]/div/div/div[3]/div/div[2]/div/div[4]/app-root/app-common/items/div/span[1]/div/span/cluster/div/div/div[1]/div/span/div/div/span[2]/route-choice/ul/li{}/route/itinerary/div/div/div[3]/itinerary-element[2]/span/duration-item/span/span",
   }
+
   guest_classes_to_value = {
     "economy": "YC",
     "premium_economy": "PE",
@@ -97,7 +83,7 @@ class DecolarWebScraper(BaseWebScraper):
     self.base_url = "https://www.decolar.com/shop/flights/results/roundtrip/"
   
   def insert_cities(self):
-    codes_df = pd.read_csv("./ip2location-iata-icao-master/iata-icao.csv")
+    codes_df = pd.read_csv("src/ip2location-iata-icao-master/iata-icao.csv")
 
     def get_abbreviation(name: str):
       if len(codes_df[codes_df["iata"] == name]):
@@ -140,33 +126,46 @@ class DecolarWebScraper(BaseWebScraper):
     
   def apply_filters(self):
     if self.max_stops != -1:
-      checkbox_position = str(2+self.max_stops)
-      filter_max_stops_elem = self.find_element('filter_max_stops', checkbox_position)
-      self.click_on_element(filter_max_stops_elem)
+      filter_stops = self.driver.find_element(By.ID, "filter-stops")
+      filter_max_stops_elem = filter_stops.find_elements(By.CLASS_NAME, "filters-checkbox-left")[self.max_stops+1]
+      self.click_on_element_by_xpath(filter_max_stops_elem)
       time.sleep(2)
-    filter_check_in_luggage_elem = self.find_element('filter_check_in_luggage')
-    self.click_on_element(filter_check_in_luggage_elem)
+    filter_baggage = self.driver.find_element(By.ID, "filter-baggage")
+    filter_check_in_luggage_elem = filter_baggage.find_elements(By.CLASS_NAME, "filters-checkbox-left")[-1]
+    self.click_on_element_by_xpath(filter_check_in_luggage_elem)
     time.sleep(2)
 
   def get_results(self, site_name) -> dict:
-    return {
-      "price_by_adult": self.find_element('results_price_by_adult').text,
-      "price_without_taxes": self.find_element('results_price_without_taxes').text,
-      "price_taxes": self.find_element('results_price_taxes').text,
-      "price_total": self.find_element('results_price_total').text,
-      "outbound_company": self.find_element('results_outbound_company').text,
-      "outbound_departure_hour": self.find_element('results_outbound_departure_hour').text,
-      "outbound_arrival_hour": self.find_element('results_outbound_arrival_hour').text,
-      "outbound_stops": self.find_element('results_outbound_stops').text,
-      "outbound_flight_duration": self.find_element('results_outbound_flight_duration').text,
-      "return_company": self.find_element('results_return_company').text,
-      "return_departure_hour": self.find_element('results_return_departure_hour').text,
-      "return_arrival_hour": self.find_element('results_return_arrival_hour').text,
-      "return_stops": self.find_element('results_return_stops').text,
-      "return_flight_duration": self.find_element('results_return_flight_duration').text,
-      "site_name": site_name,
-      "page_url": self.driver.current_url,
-    }
+    max_results = 3
+    results_list = []
+    clusters = self.driver.find_element(By.ID, "clusters")
+    total_price_list = clusters.find_elements(By.CLASS_NAME, "price-amount")[:max_results]
+    itineraries_containers = clusters.find_elements(By.CLASS_NAME, "itineraries-container")[:max_results]
+    
+    if len(total_price_list) != len(itineraries_containers):
+      raise Exception("BUG in results selection: len(total_price_list) != len(itineraries_containers)")
+
+    for i, container in enumerate(itineraries_containers):
+      result = {}
+      sub_cluster = container.find_elements(By.CLASS_NAME, "sub-cluster")
+      outbound_info = sub_cluster[0]
+      return_info = sub_cluster[1]
+      
+      result["total_price"] = total_price_list[i].text
+      result["outbound_company"] = outbound_info.find_element(By.CLASS_NAME, "airlines").text
+      result["outbound_departure_hour"] = outbound_info.find_element(By.CLASS_NAME, "leave").find_element(By.CLASS_NAME, "hour").text
+      result["outbound_arrival_hour"] = outbound_info.find_element(By.CLASS_NAME, "arrive").find_element(By.CLASS_NAME, "hour").text
+      result["outbound_flight_duration"] = outbound_info.find_element(By.CLASS_NAME, "best-duration").text
+      result["outbound_stops"] = outbound_info.find_element(By.CLASS_NAME, "stops-text").text
+      result["return_company"] = return_info.find_element(By.CLASS_NAME, "airlines").text
+      result["return_departure_hour"] = return_info.find_element(By.CLASS_NAME, "leave").find_element(By.CLASS_NAME, "hour").text
+      result["return_arrival_hour"] = return_info.find_element(By.CLASS_NAME, "arrive").find_element(By.CLASS_NAME, "hour").text
+      result["return_flight_duration"] = outbound_info.find_element(By.CLASS_NAME, "best-duration").text
+      result["return_stops"] = return_info.find_element(By.CLASS_NAME, "stops-text").text
+      result["page_url"] = self.base_url
+      results_list.append(result)
+
+    return results_list
 
   def scrap_website(self, url, site_name):
     self.insert_cities()
@@ -174,12 +173,11 @@ class DecolarWebScraper(BaseWebScraper):
     self.select_guests()
     self.driver.get(self.base_url)
     try:
-      close_login_popup_elem = self.find_element('close_login_popup')
-      self.click_on_element(close_login_popup_elem)
+      close_login_popup_elem = self.find_element_by_xpath('close_login_popup')
+      self.click_on_element_by_xpath(close_login_popup_elem)
     except TimeoutException:
       print("Login popup did not show.")
     self.apply_filters()
-
     return self.get_results(site_name)
 #%%
 class GoogleNotCurrentYearException(Exception):
@@ -237,9 +235,9 @@ class GoogleFlightsWebScraper(BaseWebScraper):
     super().__init__(**kwargs, guest_classes_to_value=self.guest_classes_to_value, xpaths=self.xpaths)
   
   def insert_cities(self):
-    origin_city_click_elem = self.find_element('origin_city_click')
-    self.click_on_element(origin_city_click_elem)
-    origin_city_elem = self.find_element('origin_city')
+    origin_city_click_elem = self.find_element_by_xpath('origin_city_click')
+    self.click_on_element_by_xpath(origin_city_click_elem)
+    origin_city_elem = self.find_element_by_xpath('origin_city')
     origin_city_elem.send_keys(Keys.END)
     time.sleep(0.5)
     origin_city_elem.send_keys("".join([Keys.BACK_SPACE for _ in range(50)]))
@@ -249,9 +247,9 @@ class GoogleFlightsWebScraper(BaseWebScraper):
     origin_city_elem.send_keys(Keys.RETURN)
     time.sleep(1)
 
-    destiny_city_click_elem = self.find_element('destiny_city_click')
-    self.click_on_element(destiny_city_click_elem)
-    destiny_city_elem = self.find_element('destiny_city')
+    destiny_city_click_elem = self.find_element_by_xpath('destiny_city_click')
+    self.click_on_element_by_xpath(destiny_city_click_elem)
+    destiny_city_elem = self.find_element_by_xpath('destiny_city')
     destiny_city_elem.send_keys(self.destiny_city)
     time.sleep(1)
     destiny_city_elem.send_keys(Keys.RETURN)
@@ -270,8 +268,8 @@ class GoogleFlightsWebScraper(BaseWebScraper):
     arrival_date_input = format_date(arrival_date, format='E, d {} MMM', locale='pt').format("de")
     departure_date_input = format_date(departure_date, format='E, d {} MMM', locale='pt').format("de")
     
-    arrival_date_elem = self.find_element('arrival_date')
-    self.click_on_element(arrival_date_elem)
+    arrival_date_elem = self.find_element_by_xpath('arrival_date')
+    self.click_on_element_by_xpath(arrival_date_elem)
     arrival_date_elem.send_keys(Keys.END)
     time.sleep(0.5)
     arrival_date_elem.send_keys("".join([Keys.BACK_SPACE for _ in range(10)]))
@@ -281,8 +279,8 @@ class GoogleFlightsWebScraper(BaseWebScraper):
     arrival_date_elem.send_keys(Keys.RETURN)
     time.sleep(1)
 
-    departure_date_elem = self.find_element('departure_date')
-    self.click_on_element(departure_date_elem)
+    departure_date_elem = self.find_element_by_xpath('departure_date')
+    self.click_on_element_by_xpath(departure_date_elem)
     departure_date_elem.send_keys(Keys.END)
     time.sleep(0.5)
     departure_date_elem.send_keys("".join([Keys.BACK_SPACE for _ in range(10)]))
@@ -292,50 +290,50 @@ class GoogleFlightsWebScraper(BaseWebScraper):
     departure_date_elem.send_keys(Keys.RETURN)
     time.sleep(1)
 
-    box_date_apply_elem = self.find_element('box_date_apply')
-    self.click_on_element(box_date_apply_elem)
+    box_date_apply_elem = self.find_element_by_xpath('box_date_apply')
+    self.click_on_element_by_xpath(box_date_apply_elem)
 
   def select_guests(self):
-    guests_elem = self.find_element('guests')
-    self.click_on_element(guests_elem)
+    guests_elem = self.find_element_by_xpath('guests')
+    self.click_on_element_by_xpath(guests_elem)
     if self.guests['adults'] > 1:
-      guests_adults_increase_button_elem = self.find_element('guests_adults_increase_button')
+      guests_adults_increase_button_elem = self.find_element_by_xpath('guests_adults_increase_button')
       for _ in range(self.guests['adults'] - 1):
-        self.click_on_element(guests_adults_increase_button_elem)
+        self.click_on_element_by_xpath(guests_adults_increase_button_elem)
     if self.guests['minors']['amount'] > 0:
       for age in self.guests['minors']['ages']:
         if age < 0:
           raise ValueError("Invalid age: {}".format(age))
         elif age < 2:
-          guests_increase_minors_button_elem = self.find_element('guests_minors_0_to_2_increase_button')
+          guests_increase_minors_button_elem = self.find_element_by_xpath('guests_minors_0_to_2_increase_button')
         elif age <= 11:
-          guests_increase_minors_button_elem = self.find_element('guests_minors_2_to_11_increase_button')
+          guests_increase_minors_button_elem = self.find_element_by_xpath('guests_minors_2_to_11_increase_button')
         elif age <= 18:
-          guests_increase_minors_button_elem = self.find_element('guests_minors_11_to_18_increase_button')
+          guests_increase_minors_button_elem = self.find_element_by_xpath('guests_minors_11_to_18_increase_button')
         else:
           raise ValueError("Invalid age: {}".format(age))
-        self.click_on_element(guests_increase_minors_button_elem)
-    self.click_on_element(self.find_element('guests_apply'))
+        self.click_on_element_by_xpath(guests_increase_minors_button_elem)
+    self.click_on_element_by_xpath(self.find_element_by_xpath('guests_apply'))
 
-    guests_class_button_elem = self.find_element('guests_class_button')
-    self.click_on_element(guests_class_button_elem)
+    guests_class_button_elem = self.find_element_by_xpath('guests_class_button')
+    self.click_on_element_by_xpath(guests_class_button_elem)
 
-    guests_class_selection_elem = self.find_element('guests_class_selection', self.guest_classes_to_value[self.guests['class']])
-    self.click_on_element(guests_class_selection_elem)
+    guests_class_selection_elem = self.find_element_by_xpath('guests_class_selection', self.guest_classes_to_value[self.guests['class']])
+    self.click_on_element_by_xpath(guests_class_selection_elem)
     
   def apply_filters(self):
-    filter_max_stops_button_elem = self.find_element("filter_max_stops_button")
+    filter_max_stops_button_elem = self.find_element_by_xpath("filter_max_stops_button")
 
     if self.max_stops != -1:
-      self.click_on_element(filter_max_stops_button_elem)
+      self.click_on_element_by_xpath(filter_max_stops_button_elem)
       try:
         if self.max_stops == 0:
-          filter_max_stops_radio_elem = self.find_element("filter_max_stops_0")
+          filter_max_stops_radio_elem = self.find_element_by_xpath("filter_max_stops_0")
         elif self.max_stops == 1:
-          filter_max_stops_radio_elem = self.find_element("filter_max_stops_1")
+          filter_max_stops_radio_elem = self.find_element_by_xpath("filter_max_stops_1")
         elif self.max_stops == 2:
-          filter_max_stops_radio_elem = self.find_element("filter_max_stops_2")
-        self.click_on_element(filter_max_stops_radio_elem)
+          filter_max_stops_radio_elem = self.find_element_by_xpath("filter_max_stops_2")
+        self.click_on_element_by_xpath(filter_max_stops_radio_elem)
       except TimeoutException:
         raise GoogleMaxStopsFilterException()
 
@@ -350,7 +348,7 @@ class GoogleFlightsWebScraper(BaseWebScraper):
     self.select_guests()
     self.insert_dates()
     try:
-      self.click_on_element(self.find_element('search'))
+      self.click_on_element_by_xpath(self.find_element_by_xpath('search'))
     except (TimeoutException, StaleElementReferenceException):
       pass
     self.apply_filters()
@@ -379,7 +377,7 @@ kwargs = {
   "arrival_date": "2023-05-20",
   "departure_date": "2023-05-25",
   "origin_city": "SAO",
-  "destiny_city": "RIO",
+  "destiny_city": "ORL",
   "guests": {
     "adults": 2,
     "minors": {
@@ -391,13 +389,16 @@ kwargs = {
   "check_in_luggage": True,
   "max_stops": 0
 }
+
 #%%
+
 ws = DecolarWebScraper(**kwargs)
+print("scraping decolar...")
 print(ws.scrap_website("https://decolar.com/passagens-aereas", "decolar"))
-ws.driver.quit()
+# ws.driver.quit()
 
 # ws = GoogleFlightsWebScraper(**kwargs)
 # ws.scrap_website("https://www.google.com/flights?hl=pt-BR", "google_flights")
 #%%
-response = scraping_entrypoint(**kwargs)
+# response = scraping_entrypoint(**kwargs)
 # %%
