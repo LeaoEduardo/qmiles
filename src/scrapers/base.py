@@ -4,8 +4,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import ElementClickInterceptedException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options
+from fake_useragent import UserAgent
 
 from src import DRIVER_PATH
+
+ua = UserAgent()
 
 @dataclass
 class BaseWebScraper:
@@ -23,7 +27,11 @@ class BaseWebScraper:
   driver: webdriver.Firefox = field(init=False)
   
   def __post_init__(self):
-    self.driver = webdriver.Firefox(executable_path=DRIVER_PATH)
+    options = Options()
+    user_agent = ua.random
+    options.add_argument(f"--user-agent={user_agent}")
+    self.driver = webdriver.Firefox(executable_path=DRIVER_PATH, options=options)
+    self.driver.set_window_size(1920, 1080)
 
   def __del__(self):
     self.driver.quit()
