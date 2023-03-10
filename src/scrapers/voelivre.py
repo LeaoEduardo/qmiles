@@ -77,30 +77,31 @@ class VoeLivreWebScraper(BaseWebScraper):
   def get_results(self, site_name) -> dict:
     max_results = 3
     results_list = []
-    clusters = self.driver.find_element(By.ID, "clusters")
-    total_price_list = clusters.find_elements(By.CLASS_NAME, "price-amount")[:max_results]
-    itineraries_containers = clusters.find_elements(By.CLASS_NAME, "itineraries-container")[:max_results]
+    clusters = self.driver.find_element(By.ID, "dinheiro")
+    itineraries_containers = clusters.find_elements(By.CLASS_NAME, "resultado")[:max_results]
     
-    if len(total_price_list) != len(itineraries_containers):
-      raise Exception("BUG in results selection: len(total_price_list) != len(itineraries_containers)")
-
-    for i, container in enumerate(itineraries_containers):
+    for container in itineraries_containers:
       result = {}
-      sub_cluster = container.find_elements(By.CLASS_NAME, "sub-cluster")
-      outbound_info = sub_cluster[0]
-      return_info = sub_cluster[1]
+      total_price_column = container.find_element(By.CLASS_NAME, "valor")
+      info_head_elem = container.find_element(By.CLASS_NAME, "infohead")
+      options = container.find_element(By.CLASS_NAME, "opcoes")
+      self.click_on_element(options)
+      infos = container.find_element(By.CLASS_NAME, "infodinheiro")
       
-      result["total_price"] = total_price_list[i].text
-      result["outbound_company"] = outbound_info.find_element(By.CLASS_NAME, "airlines").text
-      result["outbound_departure_hour"] = outbound_info.find_element(By.CLASS_NAME, "leave").find_element(By.CLASS_NAME, "hour").text
-      result["outbound_arrival_hour"] = outbound_info.find_element(By.CLASS_NAME, "arrive").find_element(By.CLASS_NAME, "hour").text
-      result["outbound_flight_duration"] = outbound_info.find_element(By.CLASS_NAME, "best-duration").text
-      result["outbound_stops"] = outbound_info.find_element(By.CLASS_NAME, "stops-text").text
-      result["return_company"] = return_info.find_element(By.CLASS_NAME, "airlines").text
-      result["return_departure_hour"] = return_info.find_element(By.CLASS_NAME, "leave").find_element(By.CLASS_NAME, "hour").text
-      result["return_arrival_hour"] = return_info.find_element(By.CLASS_NAME, "arrive").find_element(By.CLASS_NAME, "hour").text
-      result["return_flight_duration"] = outbound_info.find_element(By.CLASS_NAME, "best-duration").text
-      result["return_stops"] = return_info.find_element(By.CLASS_NAME, "stops-text").text
+      outbound_infos = infos.find_element(By.XPATH, "div[1]").find_elements(By.CLASS_NAME, "voo")[0].find_elements(By.CLASS_NAME, "layout-column")
+      return_infos = infos.find_element(By.XPATH, "div[2]").find_elements(By.CLASS_NAME, "voo")[0].find_elements(By.CLASS_NAME, "layout-column")
+      
+      result["total_price"] = total_price_column.find_element(By.XPATH, "h3").text
+      result["outbound_company"] = info_head_elem.find_element(By.XPATH, "div[1]/div/img").get_attribute("alt")
+      result["outbound_departure_hour"] = outbound_infos[1].text
+      result["outbound_arrival_hour"] = outbound_infos[3].text
+      result["outbound_flight_duration"] = outbound_infos[2].text
+      result["outbound_stops"] = outbound_infos[4].text
+      result["return_company"] = info_head_elem.find_element(By.XPATH, "div[2]/div/img").get_attribute("alt")
+      result["return_departure_hour"] = return_infos[1].text
+      result["return_arrival_hour"] = return_infos[3].text
+      result["return_flight_duration"] = return_infos[2].text
+      result["return_stops"] = return_infos[4].text
       result["page_url"] = self.base_url
       results_list.append(result)
 
@@ -111,12 +112,5 @@ class VoeLivreWebScraper(BaseWebScraper):
     self.insert_dates()
     self.select_guests()
     self.driver.get(self.base_url)
-    # try:
-    #   close_ok_popup_elem = self.find_element_by_xpath('close_ok_popup')
-    #   self.click_on_element(close_ok_popup_elem)
-    # except TimeoutException:
-    #   print("Ok popup did not show.")
     self.apply_filters()
-    time.sleep(100)
-    return "Yes"
-    # return self.get_results(site_name)
+    return self.get_results(site_name)
