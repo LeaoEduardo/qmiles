@@ -27,14 +27,20 @@ class BaseWebScraper:
   driver: webdriver.Firefox = field(init=False)
   
   def __post_init__(self):
+    profile = webdriver.FirefoxProfile()
     options = Options()
     user_agent = ua.random
+    PROXY_HOST = "12.12.12.123"
+    PROXY_PORT = "1234"
     options.add_argument(f"--user-agent={user_agent}")
-    self.driver = webdriver.Firefox(executable_path=DRIVER_PATH, options=options)
-    self.driver.set_window_size(1920, 1080)
+    options.set_preference("network.proxy.type", 1)
+    options.set_preference("network.proxy.http", PROXY_HOST)
+    options.set_preference("network.proxy.http_port", int(PROXY_PORT))
+    options.set_preference("dom.webdriver.enabled", False)
+    options.set_preference('useAutomationExtension', False)
 
-  def __del__(self):
-    self.driver.quit()
+    self.driver = webdriver.Firefox(executable_path=DRIVER_PATH, options=options, firefox_profile=profile)
+    self.driver.set_window_size(1920, 1080)
 
   def click_on_element(self, element):
     try:
