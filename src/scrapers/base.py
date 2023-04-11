@@ -41,6 +41,9 @@ class BaseWebScraper:
 
     self.driver = webdriver.Firefox(executable_path=DRIVER_PATH, options=options, firefox_profile=profile)
     self.driver.set_window_size(1920, 1080)
+  
+  def __del__(self):
+    self.driver.quit()
 
   def click_on_element(self, element):
     try:

@@ -1,17 +1,23 @@
 from src.scrapers.models import *
 from random import choice
+import traceback
 
 site_to_ws_class = {
   "decolar": DecolarWebScraper,
   "google_flights": GoogleFlightsWebScraper,
-  "skyscanner": SkyscannerWebScraper
+  "skyscanner": SkyscannerWebScraper,
+  "voelivre": VoeLivreWebScraper
 }
 
 def scraping_entrypoint(**kwargs):
   results = []
   for site_name, url in kwargs["urls"].items():
-    ws = site_to_ws_class[site_name](**kwargs)
-    results.append(ws.scrap_website(url, site_name))
+    try:
+      ws = site_to_ws_class[site_name](**kwargs)
+      results.extend(ws.scrap_website(url, site_name))
+    except Exception:
+      traceback.print_exc()
+      print(f"{site_name} failed")
   return results
 
 format_number = lambda number: number if len(number)==2 else f"0{number}"
@@ -24,8 +30,9 @@ minors_amount = choice([i for i in range(0,4)])
 kwargs = {
   "urls": {
     "decolar": "https://decolar.com/passagens-aereas/",
-    "google_flights": "https://www.google.com/flights?hl=pt-BR",
-    "skyscanner": "https://www.skyscanner.net/transport/flights"
+    "voelivre": "https://www.voelivre.com.br/passagens-aereas/pesquisa",
+    # "google_flights": "https://www.google.com/flights?hl=pt-BR",
+    # "skyscanner": "https://www.skyscanner.net/transport/flights",
   },
   
   "arrival_date": f"2023-{month}-{arrival_day}",
@@ -66,9 +73,9 @@ kwargs = {
 # import time
 # time.sleep(100)
 
-ws = VoeLivreWebScraper(**kwargs)
-print("scraping VoeLivre...")
-print(ws.scrap_website("https://www.voelivre.com.br/passagens-aereas/pesquisa/RIO/ORL/2023-06-15/ORL/RIO/2023-06-22/?a=2&c=1&c=0#", "voelivre"))
+# ws = VoeLivreWebScraper(**kwargs)
+# print("scraping VoeLivre...")
+# print(ws.scrap_website("https://www.voelivre.com.br/passagens-aereas/pesquisa/RIO/ORL/2023-06-15/ORL/RIO/2023-06-22/?a=2&c=1&c=0#", "voelivre"))
 
 
-# response = scraping_entrypoint(**kwargs)
+print(scraping_entrypoint(**kwargs))

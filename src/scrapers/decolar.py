@@ -12,8 +12,15 @@ class DecolarWebScraper(BaseWebScraper):
     "close_login_popup": "/html/body/div[8]/div/nav/div[6]/div[1]/i",
   }
 
+  guest_classes_to_value = {
+    "economy": "YC",
+    "premium_economy": "PE",
+    "business": "C",
+    "first_class": "F",
+  }
+
   def __init__(self, **kwargs):
-    super().__init__(**kwargs, xpaths=self.xpaths)
+    super().__init__(**kwargs, xpaths=self.xpaths, guest_classes_to_value=self.guest_classes_to_value)
     self.base_url = "https://www.decolar.com/shop/flights/results/roundtrip/"
   
   def insert_cities(self):
