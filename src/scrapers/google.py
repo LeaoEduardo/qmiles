@@ -1,5 +1,6 @@
 import time
 
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 
@@ -33,20 +34,8 @@ class GoogleFlightsWebScraper(BaseWebScraper):
     "filter_max_stops_0": "/html/body/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div/div[4]/div/div[2]/div[3]/div/div[1]/section/div[2]/div[1]/div/div/div[2]/label",
     "filter_max_stops_1": "/html/body/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div/div[4]/div/div[2]/div[3]/div/div[1]/section/div[2]/div[1]/div/div/div[3]/label",
     "filter_max_stops_2": "/html/body/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div/div[4]/div/div[2]/div[3]/div/div[1]/section/div[2]/div[1]/div/div/div[4]/label",
-    "results_price_by_adult": "",
-    "results_price_without_taxes": "",
-    "results_price_taxes": "",
-    "results_price_total": "",
-    "results_outbound_company": "",
-    "results_outbound_departure_hour": "",
-    "results_outbound_arrival_hour": "",
-    "results_outbound_stops": "",
-    "results_outbound_flight_duration": "",
-    "results_return_company": "",
-    "results_return_departure_hour": "",
-    "results_return_arrival_hour": "",
-    "results_return_stops": "",
-    "results_return_flight_duration": "",
+    "results_ul": "/html/body/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[2]/div[3]/ul",
+    "return_to_outbound": "/html/body/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[2]/div[2]/div/ol/li[1]/span/span/span/div/div"
   }
 
   guest_classes_to_value = {
@@ -163,9 +152,47 @@ class GoogleFlightsWebScraper(BaseWebScraper):
         raise GoogleMaxStopsFilterException()
 
   def get_results(self, site_name):
-    return {
-      "site_name": site_name
-    }
+    results_list= []
+    max_results = 3
+    
+    for i in range(max_results):
+
+      results_ul_outbound_elem = self.find_element_by_xpath("results_ul")
+      try:
+        outbound_result_elem = results_ul_outbound_elem.find_elements(By.XPATH, "li")[i+1]
+      except IndexError:
+        break
+
+      results = {}
+      outbound_price = outbound_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[6]/div[1]/div[2]/span").text.lstrip("R$").replace(".", "")
+      results["outbound_company"] = " ".join([elem.text for elem in outbound_result_elem.find_elements(By.XPATH, "div/div[2]/div/div[2]/div[2]/div[2]/span")])
+      results["outbound_departure_hour"] = outbound_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[2]/div[1]/span/span[1]/span/span/span").text
+      results["outbound_arrival_hour"] = outbound_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[2]/div[1]/span/span[2]/span/span/span").text
+      results["outbound_flight_duration"] = outbound_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[3]/div").text
+      results["outbound_stops"] = outbound_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[4]/div[1]/span").text
+      
+      self.click_on_element(outbound_result_elem)
+      time.sleep(2)
+
+      results_ul_return_elem = self.find_element_by_xpath("results_ul")
+      return_result_elem = results_ul_return_elem.find_elements(By.XPATH, "li")[0]
+
+      return_price = return_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[6]/div[1]/div[2]/span").text.lstrip("R$").replace(".", "")
+      results["return_company"] = " ".join([elem.text for elem in return_result_elem.find_elements(By.XPATH, "div/div[2]/div/div[2]/div[2]/div[2]/span")])
+      results["return_departure_hour"] = return_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[2]/div[1]/span/span[1]/span/span/span").text
+      results["return_arrival_hour"] = return_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[2]/div[1]/span/span[2]/span/span/span").text
+      results["return_flight_duration"] = return_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[3]/div").text
+      results["return_stops"] = return_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[4]/div[1]/span").text
+
+      results["total_price"] = str(int(outbound_price) + int(return_price))
+      results["page_url"] = self.driver.current_url
+      results_list.append(results)
+
+      return_to_outbound_elem = self.find_element_by_xpath("return_to_outbound")
+      self.click_on_element(return_to_outbound_elem)
+      time.sleep(2)
+
+    return results_list
 
   def scrap_website(self, url, site_name):
     self.driver.get(url)
@@ -176,6 +203,6 @@ class GoogleFlightsWebScraper(BaseWebScraper):
       self.click_on_element(self.find_element_by_xpath('search'))
     except (TimeoutException, StaleElementReferenceException):
       pass
-    self.apply_filters()
+    # self.apply_filters()
 
     return self.get_results(site_name)

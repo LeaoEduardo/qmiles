@@ -113,7 +113,7 @@ class VoeLivreWebScraper(BaseWebScraper):
     self.select_guests()
     self.driver.get(self.base_url)
     time.sleep(10)
-    self.apply_filters()
+    # self.apply_filters()
     progress_bar = self.driver.find_element(By.CLASS_NAME, "progress-bar").get_attribute("aria-valuenow")
     while progress_bar != "100":
       time.sleep(10)

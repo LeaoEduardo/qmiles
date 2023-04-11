@@ -2,6 +2,8 @@ from src.scrapers.models import *
 from random import choice
 import traceback
 
+from pprint import pprint
+
 site_to_ws_class = {
   "decolar": DecolarWebScraper,
   "google_flights": GoogleFlightsWebScraper,
@@ -10,6 +12,7 @@ site_to_ws_class = {
 }
 
 def scraping_entrypoint(**kwargs):
+  pprint(kwargs)
   results = []
   for site_name, url in kwargs["urls"].items():
     try:
@@ -31,14 +34,14 @@ kwargs = {
   "urls": {
     "decolar": "https://decolar.com/passagens-aereas/",
     "voelivre": "https://www.voelivre.com.br/passagens-aereas/pesquisa",
-    # "google_flights": "https://www.google.com/flights?hl=pt-BR",
+    "google_flights": "https://www.google.com/flights?hl=pt-BR",
     # "skyscanner": "https://www.skyscanner.net/transport/flights",
   },
   
   "arrival_date": f"2023-{month}-{arrival_day}",
   "departure_date": f"2023-{month}-{departure_day}",
   "origin_city": choice([
-    "SAO", "RIO", 
+    "GRU", "GIG", 
     "BHZ", "BSB", "CWB"
   ]),
   "destiny_city": choice([
@@ -53,7 +56,7 @@ kwargs = {
     },
     "class": "economy"
   },
-  "check_in_luggage": choice((True, False)),
+  # "check_in_luggage": choice((True, False)),
   # "max_stops": choice((0,1))
 }
 

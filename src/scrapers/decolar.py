@@ -2,7 +2,7 @@ import os
 import time
 
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import pandas as pd
 
 from src.scrapers.base import BaseWebScraper
@@ -67,14 +67,21 @@ class DecolarWebScraper(BaseWebScraper):
     
   def apply_filters(self):
     if self.max_stops != -1:
-      filter_stops = self.driver.find_element(By.ID, "filter-stops")
-      filter_max_stops_elem = filter_stops.find_elements(By.CLASS_NAME, "filters-checkbox-left")[self.max_stops+1]
-      self.click_on_element(filter_max_stops_elem)
-      time.sleep(2)
-    filter_baggage = self.driver.find_element(By.ID, "filter-baggage")
-    filter_check_in_luggage_elem = filter_baggage.find_elements(By.CLASS_NAME, "filters-checkbox-left")[-1]
-    self.click_on_element(filter_check_in_luggage_elem)
-    time.sleep(2)
+      try:
+        filter_stops = self.driver.find_element(By.ID, "filter-stops")
+        filter_max_stops_elem = filter_stops.find_elements(By.CLASS_NAME, "filters-checkbox-left")[self.max_stops+1]
+        self.click_on_element(filter_max_stops_elem)
+        time.sleep(2)
+      except (TimeoutException, NoSuchElementException):
+        print("Could not apply max stops filter.")
+    if self.check_in_luggage:
+      try:
+        filter_baggage = self.driver.find_element(By.ID, "filter-baggage")
+        filter_check_in_luggage_elem = filter_baggage.find_elements(By.CLASS_NAME, "filters-checkbox-left")[-1]
+        self.click_on_element(filter_check_in_luggage_elem)
+        time.sleep(2)
+      except (TimeoutException, NoSuchElementException):
+        print("Could not apply check in luggage filter.")
 
   def get_results(self, site_name) -> dict:
     max_results = 3
@@ -113,10 +120,5 @@ class DecolarWebScraper(BaseWebScraper):
     self.insert_dates()
     self.select_guests()
     self.driver.get(self.base_url)
-    try:
-      close_login_popup_elem = self.find_element_by_xpath('close_login_popup')
-      self.click_on_element(close_login_popup_elem)
-    except TimeoutException:
-      print("Login popup did not show.")
-    self.apply_filters()
+    # self.apply_filters()
     return self.get_results(site_name)

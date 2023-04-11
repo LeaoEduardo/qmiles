@@ -19,7 +19,7 @@ class BaseWebScraper:
   origin_city: str
   destiny_city: str
   guests: dict
-  check_in_luggage: bool
+  check_in_luggage: bool = False
   max_stops: int = -1
   delay: int = 20
   xpaths: dict = None
