@@ -8,7 +8,9 @@ site_to_ws_class = {
   "decolar": DecolarWebScraper,
   "google_flights": GoogleFlightsWebScraper,
   "skyscanner": SkyscannerWebScraper,
-  "voelivre": VoeLivreWebScraper
+  "voeazul": VoeAzulWebScraper,
+  "voelivre": VoeLivreWebScraper,
+  "smiles": SmilesWebScraper
 }
 
 def scraping_entrypoint(**kwargs):
@@ -32,9 +34,11 @@ minors_amount = choice([i for i in range(0,4)])
 
 kwargs = {
   "urls": {
-    "decolar": "https://decolar.com/passagens-aereas/",
-    "voelivre": "https://www.voelivre.com.br/passagens-aereas/pesquisa",
-    "google_flights": "https://www.google.com/flights?hl=pt-BR",
+    # "decolar": "https://decolar.com/passagens-aereas/",
+    # "voelivre": "https://www.voelivre.com.br/passagens-aereas/pesquisa",
+    # "google_flights": "https://www.google.com/flights?hl=pt-BR",
+    "smiles": "https://www.smiles.com.br/mfe/emissao-passagem?tripType=1",
+    # "voeazul": "https://www.voeazul.com.br/br/pt/home/selecao-voo?"
     # "skyscanner": "https://www.skyscanner.net/transport/flights",
   },
   
@@ -59,7 +63,6 @@ kwargs = {
   # "check_in_luggage": choice((True, False)),
   # "max_stops": choice((0,1))
 }
-
 # print(kwargs)
 
 # ws = DecolarWebScraper(**kwargs)

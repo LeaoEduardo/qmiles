@@ -65,18 +65,28 @@ class SmilesWebScraper(BaseWebScraper):
 
     self.base_url = "&".join([self.base_url, query_parameters])
 
-  def get_results(self, site_name) -> dict:
+  def get_results(self, site_name) -> list[dict]:
+    from itertools import product
 
-    def get_info_from_container(container, prefix) -> dict:
-      info = {}
-      info_elem = container.find_elements(By.CLASS_NAME, "select-flight-list-accordion-item")[0]
-      info[f"{prefix}_company"] = info_elem.find_element(By.CLASS_NAME, "company").get_attribute("innerHTML")
-      info[f"{prefix}_departure_hour"] = info_elem.find_elements(By.CLASS_NAME, "iata-code")[0].find_element(By.XPATH, "strong").text
-      info[f"{prefix}_arrival_hour"] = info_elem.find_elements(By.CLASS_NAME, "iata-code")[1].find_element(By.XPATH, "strong").text
-      info[f"{prefix}_flight_duration"] = info_elem.find_element(By.CLASS_NAME, "scale-duration__time").text
-      info[f"{prefix}_stops"] = info_elem.find_element(By.CLASS_NAME, "scale-duration__type-flight").text
-      info[f"{prefix}_miles"] = info_elem.find_element(By.CLASS_NAME, "miles").find_element(By.XPATH, "strong").text.rstrip("milhas").replace(".","")
-      return info
+    def get_info_from_container(container, prefix) -> list[dict]:
+      infos = []
+      info_elems = container.find_elements(By.CLASS_NAME, "select-flight-list-accordion-item")
+      for info_elem in info_elems:
+        info = {}
+        info[f"{prefix}_company"] = info_elem.find_element(By.CLASS_NAME, "company").get_attribute("innerHTML")
+        info[f"{prefix}_departure_hour"] = info_elem.find_elements(By.CLASS_NAME, "iata-code")[0].find_element(By.XPATH, "strong").text
+        info[f"{prefix}_arrival_hour"] = info_elem.find_elements(By.CLASS_NAME, "iata-code")[1].find_element(By.XPATH, "strong").text
+        info[f"{prefix}_flight_duration"] = info_elem.find_element(By.CLASS_NAME, "scale-duration__time").text
+        info[f"{prefix}_stops"] = info_elem.find_element(By.CLASS_NAME, "scale-duration__type-flight").text
+        info[f"{prefix}_miles"] = info_elem.find_element(By.CLASS_NAME, "miles").find_element(By.XPATH, "strong").text.rstrip("milhas").replace(".","")
+        infos.append(info)
+      return infos
+    
+    def blend_result(separated_result):
+      result = separated_result[0] | separated_result[1]
+      result["total_miles"] = str(round(int(result.pop(f"return_miles")) + int(result.pop(f"outbound_miles"))))
+      result["page_url"] = self.base_url
+      return result
     
     return_button_elem = self.find_element(By.ID, "select-flight-accordion-volta")
     time.sleep(5)
@@ -87,11 +97,12 @@ class SmilesWebScraper(BaseWebScraper):
       return []
     outbound_container_elem = self.find_element(By.CLASS_NAME, "list-ida")
     return_container_elem = self.find_element(By.CLASS_NAME, "list-volta")
-    results = get_info_from_container(outbound_container_elem, "outbound") | get_info_from_container(return_container_elem, "return")
-    results["total_miles"] = str(int(results.pop("return_miles")) + int(results.pop("outbound_miles")))
-    results["page_url"] = self.base_url
-
-    return [results]
+    
+    outbound_infos = get_info_from_container(outbound_container_elem, "outbound")
+    return_infos = get_info_from_container(return_container_elem, "return")
+    separated_results = product(outbound_infos, return_infos)
+    
+    return [blend_result(sr) for sr in separated_results]
 
   def scrap_website(self, url, site_name):
     self.insert_cities()

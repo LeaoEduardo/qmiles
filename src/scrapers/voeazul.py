@@ -112,7 +112,7 @@ class VoeAzulWebScraper(BaseWebScraper):
       return None
     except NoSuchElementException:
       pass
-      
+
     containers = self.driver.find_elements(By.CLASS_NAME, "trip-container")
     outbound_container = containers[0]
     return_container = containers[1]
@@ -130,6 +130,7 @@ class VoeAzulWebScraper(BaseWebScraper):
     for prefix, category in (("price", "BRL"), ("miles","PTS")):
       suffix = f"&cc={category}"
       self.driver.get(self.base_url+suffix)
+      time.sleep(5)
       partial_results = self.get_results(prefix)
       if partial_results is None: continue
       results.extend(partial_results)
