@@ -52,18 +52,18 @@ class SmilesWebScraper(BaseWebScraper):
     adult_price_age_lower_limit = 12
     baby_upper_limit = 1
     adults = self.guests["adults"]
-    paying_adults = adults
-    paying_minors = 0
+    self.paying_adults = adults
+    self.paying_minors = 0
     paying_babies = 0
     for minor_age in self.guests["minors"]["ages"]:
       if minor_age >= adult_price_age_lower_limit:
-        paying_adults += 1
+        self.paying_adults += 1
       elif minor_age <= baby_upper_limit:
         paying_babies += 1
       else:
-        paying_minors += 1
+        self.paying_minors += 1
 
-    query_parameters = f"adults={paying_adults}&children={paying_minors}&infants={paying_babies}"
+    query_parameters = f"adults={self.paying_adults}&children={self.paying_minors}&infants={paying_babies}"
 
     self.base_url = "&".join([self.base_url, query_parameters])
 
@@ -86,7 +86,7 @@ class SmilesWebScraper(BaseWebScraper):
     
     def blend_result(separated_result):
       result = separated_result[0] | separated_result[1]
-      total_miles = round(int(result.pop(f"return_miles")) + int(result.pop(f"outbound_miles")))
+      total_miles = round(int(result.pop(f"return_miles")) + int(result.pop(f"outbound_miles")))*(self.paying_adults+self.paying_minors)
       result["total_miles"] = str(total_miles)
       result["total_price"] = str(round(total_miles*MILES_ESTIMATE))
       result["page_url"] = self.base_url

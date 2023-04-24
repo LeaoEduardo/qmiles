@@ -46,39 +46,37 @@ class VoeAzulWebScraper(BaseWebScraper):
     adult_price_age_lower_limit = 12
     baby_upper_limit = 1
     adults = self.guests["adults"]
-    paying_adults = adults
-    paying_minors = 0
-    paying_babies = 0
+    self.paying_adults = adults
+    self.paying_minors = 0
+    self.paying_babies = 0
     for minor_age in self.guests["minors"]["ages"]:
       if minor_age >= adult_price_age_lower_limit:
-        paying_adults += 1
+        self.paying_adults += 1
       elif minor_age <= baby_upper_limit:
-        paying_babies += 1
+        self.paying_babies += 1
       else:
-        paying_minors += 1
-
-    "p[0].t=ADT&p[0].c=2&p[0].cp=false&p[1].t=CHD&p[1].c=1&p[1].cp=false&p[2].t=INF&p[2].c=1&p[2].cp=false&f.dl=3&f.dr=3&cc=PTS"
+        self.paying_minors += 1
 
     counter = 0
     query_parameters = "&".join([
                                     f"p[{counter}].t=ADT",
-                                    f"p[{counter}].c={paying_adults}",
+                                    f"p[{counter}].c={self.paying_adults}",
                                     f"p[{counter}].cp=false"
     ])
     counter += 1
-    if paying_minors:
+    if self.paying_minors:
       query_parameters = "&".join([
                                     query_parameters,
                                     f"p[{counter}].t=CHD",
-                                    f"p[{counter}].c={paying_minors}",
+                                    f"p[{counter}].c={self.paying_minors}",
                                     f"p[{counter}].cp=false"
       ])
       counter += 1
-    if paying_babies:
+    if self.paying_babies:
       query_parameters = "&".join([
                                     query_parameters,
                                     f"p[{counter}].t=INF",
-                                    f"p[{counter}].c={paying_babies}",
+                                    f"p[{counter}].c={self.paying_babies}",
                                     f"p[{counter}].cp=false"
       ])
 
@@ -103,7 +101,8 @@ class VoeAzulWebScraper(BaseWebScraper):
 
     def blend_result(separated_result):
       result = separated_result[0] | separated_result[1]
-      total = round(float(result.pop(f"return_{category}")) + float(result.pop(f"outbound_{category}")))
+      total = float(result.pop(f"return_{category}")) + float(result.pop(f"outbound_{category}"))
+      total = round(self.paying_adults*total + self.paying_minors*0.83*total + self.paying_babies*0.1*total)
       if category == "miles":
         result["total_price"] = str(round(total*MILES_ESTIMATE))
       result[f"total_{category}"] = str(total)
