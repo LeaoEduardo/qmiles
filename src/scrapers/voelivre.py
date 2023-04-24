@@ -77,7 +77,7 @@ class VoeLivreWebScraper(BaseWebScraper):
   def get_results(self, site_name) -> dict:
     max_results = 3
     results_list = []
-    clusters = self.driver.find_element(By.ID, "dinheiro")
+    clusters = self.find_element(By.ID, "dinheiro")
     itineraries_containers = clusters.find_elements(By.CLASS_NAME, "resultado")[:max_results]
     
     for container in itineraries_containers:
@@ -114,8 +114,8 @@ class VoeLivreWebScraper(BaseWebScraper):
     self.driver.get(self.base_url)
     time.sleep(10)
     # self.apply_filters()
-    progress_bar = self.driver.find_element(By.CLASS_NAME, "progress-bar").get_attribute("aria-valuenow")
+    progress_bar = self.find_element(By.CLASS_NAME, "progress-bar").get_attribute("aria-valuenow")
     while progress_bar != "100":
-      time.sleep(10)
-      progress_bar = self.driver.find_element(By.CLASS_NAME, "progress-bar").get_attribute("aria-valuenow")
+      time.sleep(5)
+      progress_bar = self.find_element(By.CLASS_NAME, "progress-bar").get_attribute("aria-valuenow")
     return self.get_results(site_name)

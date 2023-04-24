@@ -68,7 +68,7 @@ class DecolarWebScraper(BaseWebScraper):
   def apply_filters(self):
     if self.max_stops != -1:
       try:
-        filter_stops = self.driver.find_element(By.ID, "filter-stops")
+        filter_stops = self.find_element(By.ID, "filter-stops")
         filter_max_stops_elem = filter_stops.find_elements(By.CLASS_NAME, "filters-checkbox-left")[self.max_stops+1]
         self.click_on_element(filter_max_stops_elem)
         time.sleep(2)
@@ -76,7 +76,7 @@ class DecolarWebScraper(BaseWebScraper):
         print("Could not apply max stops filter.")
     if self.check_in_luggage:
       try:
-        filter_baggage = self.driver.find_element(By.ID, "filter-baggage")
+        filter_baggage = self.find_element(By.ID, "filter-baggage")
         filter_check_in_luggage_elem = filter_baggage.find_elements(By.CLASS_NAME, "filters-checkbox-left")[-1]
         self.click_on_element(filter_check_in_luggage_elem)
         time.sleep(2)
@@ -86,7 +86,7 @@ class DecolarWebScraper(BaseWebScraper):
   def get_results(self, site_name) -> dict:
     max_results = 3
     results_list = []
-    clusters = self.driver.find_element(By.ID, "clusters")
+    clusters = self.find_element(By.ID, "clusters")
     total_price_list = clusters.find_elements(By.CLASS_NAME, "price-amount")[:max_results]
     itineraries_containers = clusters.find_elements(By.CLASS_NAME, "itineraries-container")[:max_results]
     
@@ -99,7 +99,7 @@ class DecolarWebScraper(BaseWebScraper):
       outbound_info = sub_cluster[0]
       return_info = sub_cluster[1]
       
-      result["total_price"] = total_price_list[i].text
+      result["total_price"] = total_price_list[i].text.replace(".", "")
       result["outbound_company"] = outbound_info.find_element(By.CLASS_NAME, "airlines").text
       result["outbound_departure_hour"] = outbound_info.find_element(By.CLASS_NAME, "leave").find_element(By.CLASS_NAME, "hour").text
       result["outbound_arrival_hour"] = outbound_info.find_element(By.CLASS_NAME, "arrive").find_element(By.CLASS_NAME, "hour").text
