@@ -8,6 +8,8 @@ import pandas as pd
 
 from src.scrapers.base import BaseWebScraper
 
+MILES_ESTIMATE = 19/1000
+
 class VoeAzulWebScraper(BaseWebScraper):  
   def __init__(self, **kwargs):
     super().__init__(**kwargs)
@@ -95,20 +97,23 @@ class VoeAzulWebScraper(BaseWebScraper):
         info[f"{prefix}_arrival_hour"] = info_elem.find_element(By.CLASS_NAME, "arrival").text.split("\n")[0]
         info[f"{prefix}_flight_duration"] = info_elem.find_element(By.CLASS_NAME, "duration").find_element(By.XPATH, "strong").text
         info[f"{prefix}_stops"] = info_elem.find_element(By.CLASS_NAME, "flight-leg-info").text.split("•")[0]
-        info[f"{prefix}_{category}"] = info_elem.find_element(By.CLASS_NAME, "current").text.lstrip("R$").replace(".","").replace(",", ".")
+        info[f"{prefix}_{category}"] = info_elem.find_element(By.CLASS_NAME, "current").text.lstrip("R$").replace(".","").replace(",", ".").rstrip("pontos")
         infos.append(info)
       return infos
 
     def blend_result(separated_result):
       result = separated_result[0] | separated_result[1]
-      result[f"total_{category}"] = str(round(float(result.pop(f"return_{category}")) + float(result.pop(f"outbound_{category}"))))
+      total = round(float(result.pop(f"return_{category}")) + float(result.pop(f"outbound_{category}")))
+      if category == "miles":
+        result["total_price"] = str(round(total*MILES_ESTIMATE))
+      result[f"total_{category}"] = str(total)
       result["page_url"] = self.base_url
       return result
     
 
     try:
       failed_results_message = self.find_element(By.CLASS_NAME, "availability").find_element(By.XPATH, "div/div[1]/p").text
-      print(category, failed_results_message)
+      print("VOEAZUL:", category, failed_results_message)
       return None
     except NoSuchElementException:
       pass
@@ -122,7 +127,7 @@ class VoeAzulWebScraper(BaseWebScraper):
 
     return [blend_result(sr) for sr in separated_results]
 
-  def scrap_website(self, url, site_name):
+  def scrap_website(self):
     self.insert_cities()
     self.insert_dates()
     self.select_guests()
@@ -130,6 +135,7 @@ class VoeAzulWebScraper(BaseWebScraper):
     for prefix, category in (("price", "BRL"), ("miles","PTS")):
       suffix = f"&cc={category}"
       self.driver.get(self.base_url+suffix)
+      print(self.driver.current_url)
       time.sleep(5)
       partial_results = self.get_results(prefix)
       if partial_results is None: continue

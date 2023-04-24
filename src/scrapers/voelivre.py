@@ -74,10 +74,11 @@ class VoeLivreWebScraper(BaseWebScraper):
       stop_options = filter_stops.find_elements(By.CLASS_NAME, "md-container")
       self.click_on_element(stop_options[self.max_stops])
 
-  def get_results(self, site_name) -> dict:
-    max_results = 3
+  def get_results(self) -> dict:
+    max_results = 10
     results_list = []
     clusters = self.find_element(By.ID, "dinheiro")
+    time.sleep(5)
     itineraries_containers = clusters.find_elements(By.CLASS_NAME, "resultado")[:max_results]
     
     for container in itineraries_containers:
@@ -91,7 +92,7 @@ class VoeLivreWebScraper(BaseWebScraper):
       outbound_infos = infos.find_element(By.XPATH, "div[1]").find_elements(By.CLASS_NAME, "voo")[0].find_elements(By.CLASS_NAME, "layout-column")
       return_infos = infos.find_element(By.XPATH, "div[2]").find_elements(By.CLASS_NAME, "voo")[0].find_elements(By.CLASS_NAME, "layout-column")
       
-      result["total_price"] = total_price_column.find_element(By.XPATH, "h3").text
+      result["total_price"] = total_price_column.find_element(By.XPATH, "h3").text.lstrip("R$").replace(",","")
       result["outbound_company"] = info_head_elem.find_element(By.XPATH, "div[1]/div/img").get_attribute("alt")
       result["outbound_departure_hour"] = outbound_infos[1].text
       result["outbound_arrival_hour"] = outbound_infos[3].text
@@ -107,15 +108,15 @@ class VoeLivreWebScraper(BaseWebScraper):
 
     return results_list
 
-  def scrap_website(self, url, site_name):
+  def scrap_website(self):
     self.insert_cities()
     self.insert_dates()
     self.select_guests()
     self.driver.get(self.base_url)
+    print(self.base_url)
     time.sleep(10)
-    # self.apply_filters()
     progress_bar = self.find_element(By.CLASS_NAME, "progress-bar").get_attribute("aria-valuenow")
     while progress_bar != "100":
       time.sleep(5)
-      progress_bar = self.find_element(By.CLASS_NAME, "progress-bar").get_attribute("aria-valuenow")
-    return self.get_results(site_name)
+      progress_bar = self.driver.find_element(By.CLASS_NAME, "progress-bar").get_attribute("aria-valuenow")
+    return self.get_results()

@@ -83,23 +83,20 @@ class DecolarWebScraper(BaseWebScraper):
       except (TimeoutException, NoSuchElementException):
         print("Could not apply check in luggage filter.")
 
-  def get_results(self, site_name) -> dict:
-    max_results = 3
+  def get_results(self) -> dict:
+    max_results = 10
     results_list = []
     clusters = self.find_element(By.ID, "clusters")
-    total_price_list = clusters.find_elements(By.CLASS_NAME, "price-amount")[:max_results]
-    itineraries_containers = clusters.find_elements(By.CLASS_NAME, "itineraries-container")[:max_results]
-    
-    if len(total_price_list) != len(itineraries_containers):
-      raise Exception("BUG in results selection: len(total_price_list) != len(itineraries_containers)")
+    time.sleep(5)
+    itineraries_containers = clusters.find_elements(By.CLASS_NAME, "cluster-container")[:max_results]
 
-    for i, container in enumerate(itineraries_containers):
+    for container in itineraries_containers:
       result = {}
       sub_cluster = container.find_elements(By.CLASS_NAME, "sub-cluster")
       outbound_info = sub_cluster[0]
       return_info = sub_cluster[1]
       
-      result["total_price"] = total_price_list[i].text.replace(".", "")
+      result["total_price"] = container.find_element(By.CLASS_NAME, "price-amount").text.replace(".", "")
       result["outbound_company"] = outbound_info.find_element(By.CLASS_NAME, "airlines").text
       result["outbound_departure_hour"] = outbound_info.find_element(By.CLASS_NAME, "leave").find_element(By.CLASS_NAME, "hour").text
       result["outbound_arrival_hour"] = outbound_info.find_element(By.CLASS_NAME, "arrive").find_element(By.CLASS_NAME, "hour").text
@@ -115,10 +112,10 @@ class DecolarWebScraper(BaseWebScraper):
 
     return results_list
 
-  def scrap_website(self, url, site_name):
+  def scrap_website(self):
     self.insert_cities()
     self.insert_dates()
     self.select_guests()
     self.driver.get(self.base_url)
-    # self.apply_filters()
-    return self.get_results(site_name)
+    print(self.base_url)
+    return self.get_results()

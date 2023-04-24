@@ -8,6 +8,8 @@ import pandas as pd
 
 from src.scrapers.base import BaseWebScraper
 
+MILES_ESTIMATE = 15/1000
+
 class SmilesWebScraper(BaseWebScraper):
   xpaths = {
     "close_login_popup": "/html/body/div[8]/div/nav/div[6]/div[1]/i",
@@ -65,7 +67,7 @@ class SmilesWebScraper(BaseWebScraper):
 
     self.base_url = "&".join([self.base_url, query_parameters])
 
-  def get_results(self, site_name) -> list[dict]:
+  def get_results(self) -> list[dict]:
     from itertools import product
 
     def get_info_from_container(container, prefix) -> list[dict]:
@@ -84,7 +86,9 @@ class SmilesWebScraper(BaseWebScraper):
     
     def blend_result(separated_result):
       result = separated_result[0] | separated_result[1]
-      result["total_miles"] = str(round(int(result.pop(f"return_miles")) + int(result.pop(f"outbound_miles"))))
+      total_miles = round(int(result.pop(f"return_miles")) + int(result.pop(f"outbound_miles")))
+      result["total_miles"] = str(total_miles)
+      result["total_price"] = str(round(total_miles*MILES_ESTIMATE))
       result["page_url"] = self.base_url
       return result
     
@@ -93,7 +97,7 @@ class SmilesWebScraper(BaseWebScraper):
     self.click_on_element(return_button_elem)
     time.sleep(5)
     if len(self.driver.find_elements(By.CLASS_NAME, "select-flight-not-found-card")):
-      print("No flights found for this date!")
+      print("SMILES: No flights found for this date!")
       return []
     outbound_container_elem = self.find_element(By.CLASS_NAME, "list-ida")
     return_container_elem = self.find_element(By.CLASS_NAME, "list-volta")
@@ -104,10 +108,11 @@ class SmilesWebScraper(BaseWebScraper):
     
     return [blend_result(sr) for sr in separated_results]
 
-  def scrap_website(self, url, site_name):
+  def scrap_website(self):
     self.insert_cities()
     self.insert_dates()
     self.select_guests()
     self.driver.get(self.base_url)
+    print(self.base_url)
 
-    return self.get_results(site_name)
+    return self.get_results()

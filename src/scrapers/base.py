@@ -13,7 +13,7 @@ ua = UserAgent()
 
 @dataclass
 class BaseWebScraper:
-  urls: dict
+  sites: tuple
   arrival_date: str
   departure_date: str
   origin_city: str
@@ -72,5 +72,5 @@ class BaseWebScraper:
   def get_results(self):
     pass
 
-  def scrap_website(self, url, site_name):
+  def scrap_website(self):
     pass

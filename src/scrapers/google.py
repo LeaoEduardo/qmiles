@@ -47,6 +47,7 @@ class GoogleFlightsWebScraper(BaseWebScraper):
   
   def __init__(self, **kwargs):
     super().__init__(**kwargs, guest_classes_to_value=self.guest_classes_to_value, xpaths=self.xpaths)
+    self.base_url = "https://www.google.com/flights?hl=pt-BR"
   
   def insert_cities(self):
     origin_city_click_elem = self.find_element_by_xpath('origin_city_click')
@@ -151,10 +152,10 @@ class GoogleFlightsWebScraper(BaseWebScraper):
       except TimeoutException:
         raise GoogleMaxStopsFilterException()
 
-  def get_results(self, site_name):
+  def get_results(self):
     results_list= []
-    max_results = 3
-    
+    max_results = 10
+    time.sleep(5)
     for i in range(max_results):
 
       results_ul_outbound_elem = self.find_element_by_xpath("results_ul")
@@ -167,7 +168,7 @@ class GoogleFlightsWebScraper(BaseWebScraper):
       outbound_price = outbound_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[6]/div[1]/div[2]/span").text.lstrip("R$").replace(".", "")
       results["outbound_company"] = " ".join([elem.text for elem in outbound_result_elem.find_elements(By.XPATH, "div/div[2]/div/div[2]/div[2]/div[2]/span")])
       results["outbound_departure_hour"] = outbound_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[2]/div[1]/span/span[1]/span/span/span").text
-      results["outbound_arrival_hour"] = outbound_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[2]/div[1]/span/span[2]/span/span/span").text
+      results["outbound_arrival_hour"] = outbound_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[2]/div[1]/span/span[2]/span/span/span").text.split("+")[0]
       results["outbound_flight_duration"] = outbound_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[3]/div").text
       results["outbound_stops"] = outbound_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[4]/div[1]/span").text
       
@@ -180,7 +181,7 @@ class GoogleFlightsWebScraper(BaseWebScraper):
       return_price = return_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[6]/div[1]/div[2]/span").text.lstrip("R$").replace(".", "")
       results["return_company"] = " ".join([elem.text for elem in return_result_elem.find_elements(By.XPATH, "div/div[2]/div/div[2]/div[2]/div[2]/span")])
       results["return_departure_hour"] = return_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[2]/div[1]/span/span[1]/span/span/span").text
-      results["return_arrival_hour"] = return_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[2]/div[1]/span/span[2]/span/span/span").text
+      results["return_arrival_hour"] = return_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[2]/div[1]/span/span[2]/span/span/span").text.split("+")[0]
       results["return_flight_duration"] = return_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[3]/div").text
       results["return_stops"] = return_result_elem.find_element(By.XPATH, "div/div[2]/div/div[2]/div[4]/div[1]/span").text
 
@@ -194,8 +195,8 @@ class GoogleFlightsWebScraper(BaseWebScraper):
 
     return results_list
 
-  def scrap_website(self, url, site_name):
-    self.driver.get(url)
+  def scrap_website(self):
+    self.driver.get(self.base_url)
     self.insert_cities()
     self.select_guests()
     self.insert_dates()
@@ -203,6 +204,6 @@ class GoogleFlightsWebScraper(BaseWebScraper):
       self.click_on_element(self.find_element_by_xpath('search'))
     except (TimeoutException, StaleElementReferenceException):
       pass
-    # self.apply_filters()
+    print(self.driver.current_url)
 
-    return self.get_results(site_name)
+    return self.get_results()

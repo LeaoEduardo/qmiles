@@ -1,8 +1,10 @@
 from src.scrapers.models import *
 from random import choice
 import traceback
+import multiprocessing as mp
 
 from pprint import pprint
+import pandas as pd
 
 site_to_ws_class = {
   "decolar": DecolarWebScraper,
@@ -14,17 +16,25 @@ site_to_ws_class = {
   "latampass": LatamPassWebScraper
 }
 
+workers = mp.cpu_count() - 1
+
+def scrap_single_site(site_name):
+  try:
+    ws = site_to_ws_class[site_name](**kwargs)
+    return ws.scrap_website()
+  except Exception:
+    traceback.print_exc()
+    print(f"{site_name} failed")
+    return []
+
 def scraping_entrypoint(**kwargs):
   pprint(kwargs)
   results = []
-  for site_name, url in kwargs["urls"].items():
-    try:
-      ws = site_to_ws_class[site_name](**kwargs)
-      results.extend(ws.scrap_website(url, site_name))
-    except Exception:
-      traceback.print_exc()
-      print(f"{site_name} failed")
-  return results
+
+  with mp.Pool(workers) as p:
+    results = p.map(scrap_single_site, kwargs["sites"])
+    
+  return [result for site_results in results for result in site_results ]
 
 format_number = lambda number: number if len(number)==2 else f"0{number}"
 
@@ -34,15 +44,13 @@ departure_day = format_number(choice([str(d + int(arrival_day)) for d in range(4
 minors_amount = choice([i for i in range(0,4)])
 
 kwargs = {
-  "urls": {
-    "decolar": "https://decolar.com/passagens-aereas/",
-    "voelivre": "https://www.voelivre.com.br/passagens-aereas/pesquisa",
-    "google_flights": "https://www.google.com/flights?hl=pt-BR",
-    "voeazul": "https://www.voeazul.com.br/br/pt/home/selecao-voo?",
-    # "latampass": "https://latampass.latam.com/pt_br/",
-    "smiles": "https://www.smiles.com.br/mfe/emissao-passagem?tripType=1",
-    # "skyscanner": "https://www.skyscanner.net/transport/flights",
-  },
+  "sites": (
+    "decolar",
+    "voelivre",
+    "google_flights",
+    "voeazul",
+    "smiles",
+  ),
   
   "arrival_date": f"2023-{month}-{arrival_day}",
   "departure_date": f"2023-{month}-{departure_day}",
@@ -66,4 +74,8 @@ kwargs = {
   # "max_stops": choice((0,1))
 }
 
-print(scraping_entrypoint(**kwargs))
+df = pd.DataFrame(scraping_entrypoint(**kwargs)).dropna(subset=["total_price"])
+df["total_price"] = pd.to_numeric(df.total_price)
+sorted_df = df.sort_values(by=["total_price"])
+print(sorted_df.head())
+sorted_df.to_csv("report.csv")
