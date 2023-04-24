@@ -10,7 +10,8 @@ site_to_ws_class = {
   "skyscanner": SkyscannerWebScraper,
   "voeazul": VoeAzulWebScraper,
   "voelivre": VoeLivreWebScraper,
-  "smiles": SmilesWebScraper
+  "smiles": SmilesWebScraper,
+  "latampass": LatamPassWebScraper
 }
 
 def scraping_entrypoint(**kwargs):
@@ -34,11 +35,12 @@ minors_amount = choice([i for i in range(0,4)])
 
 kwargs = {
   "urls": {
-    # "decolar": "https://decolar.com/passagens-aereas/",
-    # "voelivre": "https://www.voelivre.com.br/passagens-aereas/pesquisa",
-    # "google_flights": "https://www.google.com/flights?hl=pt-BR",
+    "decolar": "https://decolar.com/passagens-aereas/",
+    "voelivre": "https://www.voelivre.com.br/passagens-aereas/pesquisa",
+    "google_flights": "https://www.google.com/flights?hl=pt-BR",
+    "voeazul": "https://www.voeazul.com.br/br/pt/home/selecao-voo?",
+    # "latampass": "https://latampass.latam.com/pt_br/",
     "smiles": "https://www.smiles.com.br/mfe/emissao-passagem?tripType=1",
-    # "voeazul": "https://www.voeazul.com.br/br/pt/home/selecao-voo?"
     # "skyscanner": "https://www.skyscanner.net/transport/flights",
   },
   
@@ -49,7 +51,7 @@ kwargs = {
     "BHZ", "BSB", "CWB"
   ]),
   "destiny_city": choice([
-    "ORL", 
+    "MCO", 
     "LGA", "JFK", "DFW", 
     "MIA", "LAX"]),
   "guests": {
@@ -63,25 +65,5 @@ kwargs = {
   # "check_in_luggage": choice((True, False)),
   # "max_stops": choice((0,1))
 }
-# print(kwargs)
-
-# ws = DecolarWebScraper(**kwargs)
-# print("scraping decolar...")
-# print(ws.scrap_website("https://decolar.com/passagens-aereas", "decolar"))
-
-# ws = GoogleFlightsWebScraper(**kwargs)
-# print("scraping google flights...")
-# print(ws.scrap_website("https://www.google.com/flights?hl=pt-BR", "google_flights"))
-
-# ws = SkyscannerWebScraper(**kwargs)
-# print("scraping Skyscanner...")
-# print(ws.scrap_website("https://www.skyscanner.net/transport/flights", "skyscanner"))
-# import time
-# time.sleep(100)
-
-# ws = VoeLivreWebScraper(**kwargs)
-# print("scraping VoeLivre...")
-# print(ws.scrap_website("https://www.voelivre.com.br/passagens-aereas/pesquisa/RIO/ORL/2023-06-15/ORL/RIO/2023-06-22/?a=2&c=1&c=0#", "voelivre"))
-
 
 print(scraping_entrypoint(**kwargs))
