@@ -154,3 +154,6 @@ cython_debug/
 drivers/geckodriver
 
 report.csv
+kwargs.json
+
+mounted_volume

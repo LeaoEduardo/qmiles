@@ -13,7 +13,6 @@ ua = UserAgent()
 
 @dataclass
 class BaseWebScraper:
-  sites: tuple
   arrival_date: str
   departure_date: str
   origin_city: str
@@ -33,6 +32,7 @@ class BaseWebScraper:
     PROXY_HOST = "12.12.12.123"
     PROXY_PORT = "1234"
     options.add_argument(f"--user-agent={user_agent}")
+    options.add_argument("--headless")
     options.set_preference("network.proxy.type", 1)
     options.set_preference("network.proxy.http", PROXY_HOST)
     options.set_preference("network.proxy.http_port", int(PROXY_PORT))
